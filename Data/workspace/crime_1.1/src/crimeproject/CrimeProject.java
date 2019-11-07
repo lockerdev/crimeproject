@@ -8,7 +8,9 @@ import com.db4o.*;
 import com.db4o.config.Configuration;
 import com.db4o.config.EmbeddedConfiguration;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.db4o.query.Predicate;
@@ -724,7 +726,48 @@ public class CrimeProject {
 		/* ##################################################################
 			Необходимо занести районы в базу db.store(...)		
 		###################################################################*/
-	            
+        
+        db.store(el1);
+        db.store(el2);
+        db.store(el3);
+        db.store(el4);
+        db.store(el5);
+        db.store(el6);
+        db.store(el7);
+        db.store(el8);
+        db.store(el9);
+        db.store(el10);
+        db.store(el11);
+        db.store(el12);
+        db.store(el13);
+        db.store(el14);
+        db.store(el15);
+        db.store(el16);
+        db.store(el17);
+        db.store(el18);
+        db.store(el19);
+        db.store(el20);
+        db.store(el21);
+        db.store(el22);
+        db.store(el23);
+        
+        db.store(crimes1);
+        db.store(crimes2);
+        db.store(crimes3);
+        db.store(crimes4);
+        db.store(crimes5);
+        
+        db.store(criminals1);
+        db.store(criminals2);
+        db.store(criminals3);
+        db.store(criminals4);
+        db.store(criminals5);
+        
+        db.store(di1);
+        db.store(di2);
+        db.store(di3);
+        db.store(di4);
+        db.store(di5);
     }
         
     //print Result
@@ -751,47 +794,104 @@ public class CrimeProject {
 	
 //1. Найти всех преступников по имени - queryByExample
     public static void findCriminalByName (ObjectContainer db, String name){    
-        /* ... */    
+    	ObjectSet result = db.query(new Predicate<Criminal>(){
+    		public boolean match(Criminal c) {
+    			return c.getName().equals(name);
+    		}
+    	});
+    	 System.out.println("1. Найти всех преступников по имени - queryByExample");
+    	//objectResult(result);
     }
 	
 //2. Найти всех преступников    
     public static void findAllCriminals (ObjectContainer db){    
-        /* ... */    
+    	ObjectSet result = db.query(new Predicate<Criminal>(){
+    		public boolean match(Criminal c) {
+    			return c.getName() != "";
+    		}
+    	});
+    	System.out.println("2. Найти всех преступников");
+    	objectResult(result);    
     }
     
 //3. Найти все преступления, которые совершил определенный человек (имя, возраст) native queries
     public static void findAllCrimesByCriminalNameAndAge(ObjectContainer db, Criminal crim_test){		
-		/* ... */
+    	ObjectSet result = db.query(new Predicate<Crime>(){
+    		public boolean match(Crime crm) {
+    			return crm.getCriminal().toString().contains(crim_test.toString());
+    		}
+    	});
+    	System.out.println("3. Найти все преступления, которые совершил определенный человек (имя, возраст) native queries");
+    	objectResult(result);  
     }
     
 //4. Получить текст статьи УК по номеру (все пункты и части)
     public static void findArticle(ObjectContainer db, String article){	
-		/* ... */	
+    	ObjectSet result = db.query(new Predicate<ElementOfCrime>(){
+    		public boolean match(ElementOfCrime eoc) {
+    			return eoc.getNumber().contains(article);
+    		}
+    	});
+    	System.out.println("4. Получить текст статьи УК по номеру (все пункты и части)");
+    	objectResult(result);	
     }
    
 //5. Найти все районы, в которых совершались преступления по определенной статье (group by districts, name - queryByExample)
     public static void findDistrictsByArticleGroupByName(ObjectContainer db){		
-        /* ... */		
+    	Query query = db.query();
+    	query.constrain(Crime.class);
+    	query.descend("elementOfCrime").descend("number").constrain("ст.105 ч.1");
+    	//Query placequery = query.descend("date");
+    	ObjectSet result = query.execute();
+
+    	System.out.println("5. Найти все районы, в которых совершались преступления по определенной статье (group by districts, name - queryByExample)");
+    	listResult(result); 
     }
 
 //6. Вывести преступления, которое совершили определенные люди определенного числа в определенном месте
     public static void findCrimeByCriminalDatePlace(ObjectContainer db, String[] criminals, String[] places, String[] dates){		
-		/* ... */     
+    	System.out.println(Arrays.toString(dates));
+    	ObjectSet result = db.query(new Predicate<Crime>(){
+    		public boolean match(Crime c) {
+    			return Arrays.toString(places).contains(c.getPlace()) && Arrays.toString(criminals).contains(c.getCriminal().getName()) && Arrays.toString(dates).contains(c.getDate());
+    		}
+    	});
+    	System.out.println("6. Вывести преступления, которое совершили определенные люди определенного числа в определенном месте");
+    	objectResult(result); 
     }
     
 //7. Вывести всех преступников с группировкой по возрасту
     public static void findAllCriminalsGroupByAge(ObjectContainer db){			
-		/* ... */ 
+    	Query query=db.query();
+    	query.constrain(Criminal.class);
+    	query.descend("age").orderAscending();
+    	ObjectSet result=query.execute();
+    	//query.descend("name").orderDescending();
+
+    	System.out.println("7. Вывести всех преступников с группировкой по возрасту");
+    	objectResult(result);     
     }
     
 //8. В каких районах совершил преступление определенный человек (имя и фамилия) и где именно (место)
     public static void findAllDistrictForCriminalGroupByName(ObjectContainer db, String name){		
-		/* ... */ 
+    	ObjectSet result = db.query(new Predicate<Crime>(){
+    		public boolean match(Crime crm) {
+    			return crm.getCriminal().GroupByName != null && crm.getCriminal().getName().equals(name);
+    		}
+    	});
+    	System.out.println("8. В каких районах совершил преступление определенный человек (имя и фамилия) и где именно (место)");
+    	objectResult(result); 
     }
     
 //8.1. В каких районах совершил преступление определенный человек (имя) и сколько раз
     public static void findAllDistrictForCriminalGroupByDistrict(ObjectContainer db, String name){
-		/* ... */ 
+    	ObjectSet result = db.query(new Predicate<Crime>(){
+    		public boolean match(Crime crm) {
+    			return crm.getCriminal().getName().equals(name);
+    		}
+    	});
+    	System.out.println("8.1. В каких районах совершил преступление определенный человек (имя) и сколько раз");
+    	objectResult(result);
     }
     
 //9. Вывести люди, которые осуждены не за убийство
@@ -808,7 +908,7 @@ public class CrimeProject {
     {    
        
         ObjectContainer db = Db4oEmbedded.openFile(Db4oEmbedded
-        .newConfiguration(), "ПУТЬ К БД\\crimeProject.db");
+        .newConfiguration(), "crimeProject.db");
         EmbeddedConfiguration config = Db4oEmbedded.newConfiguration();
         config.common().objectClass(Criminal.class).objectField("name").indexed(true);
         config.common().objectClass(Criminal.class).objectField("age").indexed(true);
@@ -823,7 +923,7 @@ public class CrimeProject {
 		
         try {			
 			
-        fillDB(db);
+    //    fillDB(db);
 		 
     //1. Нати всех преступников по имени          
         findCriminalByName(db,"Felix");
