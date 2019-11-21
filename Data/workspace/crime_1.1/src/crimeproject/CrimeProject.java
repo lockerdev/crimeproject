@@ -4,6 +4,9 @@
  * and open the template in the editor.
  */
 package crimeproject;
+import java.util.Collections;
+import java.util.Comparator;
+
 import com.db4o.*;
 import com.db4o.config.Configuration;
 import com.db4o.config.EmbeddedConfiguration;
@@ -791,7 +794,6 @@ public class CrimeProject {
 			Применение данных функций смотрите в main
 		#################################################################################*/	
 	
-	
 //1. Найти всех преступников по имени - queryByExample
     public static void findCriminalByName (ObjectContainer db, String name){    
     	ObjectSet result = db.query(new Predicate<Criminal>(){
@@ -837,15 +839,24 @@ public class CrimeProject {
     }
    
 //5. Найти все районы, в которых совершались преступления по определенной статье (group by districts, name - queryByExample)
-    public static void findDistrictsByArticleGroupByName(ObjectContainer db){		
-    	Query query = db.query();
-    	query.constrain(Crime.class);
-    	query.descend("elementOfCrime").descend("number").constrain("ст.105 ч.1");
-    	//Query placequery = query.descend("date");
-    	ObjectSet result = query.execute();
-
+    public static void findDistrictsByArticleGroupByName(ObjectContainer db){
     	System.out.println("5. Найти все районы, в которых совершались преступления по определенной статье (group by districts, name - queryByExample)");
-    	listResult(result); 
+    	ObjectSet result = db.query(new Predicate<DistrictInfo>(){
+    		public boolean match(DistrictInfo di) {
+    			ArrayList<Crime> local_list = new ArrayList();
+    			local_list.addAll(di.getCrimes());
+    			for (int i = 0; i < local_list.size(); i++) {
+    				if (local_list.get(i).getElementOfCrime().getNumber().equals("ст.105 ч.1"))
+    				{
+    					Crime di_Crime = (Crime)local_list.get(i);
+    					System.out.println("Район: "+di.getName()+"\n"+"	Статья: "+local_list.get(i).getElementOfCrime().getNumber()+"\n"+"	Текст: "+local_list.get(i).getElementOfCrime().getText()+"\n");
+    					return true;
+    				}
+    		    }
+    			return false;
+    		}
+    	});
+    	//listResult(result); 
     }
 
 //6. Вывести преступления, которое совершили определенные люди определенного числа в определенном месте
@@ -861,37 +872,68 @@ public class CrimeProject {
     }
     
 //7. Вывести всех преступников с группировкой по возрасту
-    public static void findAllCriminalsGroupByAge(ObjectContainer db){			
+    public static void findAllCriminalsGroupByAge(ObjectContainer db){	
+
     	Query query=db.query();
     	query.constrain(Criminal.class);
     	query.descend("age").orderAscending();
     	ObjectSet result=query.execute();
-    	//query.descend("name").orderDescending();
+    	query.descend("name").orderDescending();
 
     	System.out.println("7. Вывести всех преступников с группировкой по возрасту");
     	objectResult(result);     
     }
     
 //8. В каких районах совершил преступление определенный человек (имя и фамилия) и где именно (место)
-    public static void findAllDistrictForCriminalGroupByName(ObjectContainer db, String name){		
-    	ObjectSet result = db.query(new Predicate<Crime>(){
-    		public boolean match(Crime crm) {
-    			return crm.getCriminal().GroupByName != null && crm.getCriminal().getName().equals(name);
+    public static void findAllDistrictForCriminalGroupByName(ObjectContainer db, String name){	
+		System.out.println("8. В каких районах совершил преступление определенный человек (имя и фамилия) и где именно (место)");
+    	ObjectSet result = db.query(new Predicate<DistrictInfo>(){
+    		public boolean match(DistrictInfo di) {
+    			ArrayList<Crime> local_list = new ArrayList();
+    			local_list.addAll(di.getCrimes());
+    			for (int i = 0; i < local_list.size(); i++) {
+    				if (local_list.get(i).getCriminal().getName().equals(name))
+    				{
+    					Crime di_Crime = (Crime)local_list.get(i);
+    					System.out.println("Район: "+di.getName()+"\n"+"	Имя: "+local_list.get(i).getCriminal().getName()+"\n"+"	Возраст: "+local_list.get(i).getCriminal().getAge()+"\n"+"	Место: "+local_list.get(i).getPlace()+"\n");
+    					return true;
+    				}
+    		    }
+    			return false;
     		}
     	});
-    	System.out.println("8. В каких районах совершил преступление определенный человек (имя и фамилия) и где именно (место)");
-    	objectResult(result); 
+    	//objectResult(result); 
     }
     
 //8.1. В каких районах совершил преступление определенный человек (имя) и сколько раз
     public static void findAllDistrictForCriminalGroupByDistrict(ObjectContainer db, String name){
-    	ObjectSet result = db.query(new Predicate<Crime>(){
-    		public boolean match(Crime crm) {
-    			return crm.getCriminal().getName().equals(name);
-    		}
-    	});
     	System.out.println("8.1. В каких районах совершил преступление определенный человек (имя) и сколько раз");
-    	objectResult(result);
+    	ObjectSet result = db.query(new Predicate<DistrictInfo>(){
+    		int all_count;
+    		public boolean match(DistrictInfo di) {
+    			ArrayList<Crime> local_list = new ArrayList();
+    			local_list.addAll(di.getCrimes());
+    			int count = 0;
+    			for (int i = 0; i < local_list.size(); i++) {
+    				if (local_list.get(i).getCriminal().getName().equals(name))
+    				{
+    					all_count++;
+    					count++;
+    					Crime  di_Crime = (Crime)local_list.get(i);			
+    					System.out.println("Район: "+di.getName()+"\n"+"	Имя: "+local_list.get(i).getCriminal().getName()+"\n"+"	Возраст: "+local_list.get(i).getCriminal().getAge());
+    					System.out.println("Кол-во: "+count+"\n");
+    					return true;
+    				}  				
+    		    }
+    			if (di.getName().equals("Krasnoselskiy"))
+    			{
+        			System.out.println("/ "+name+" / - Всего совершено преступлений: "+all_count+"\n");
+    			}
+    			return false;
+    		}
+    		
+    	}); 
+    	//objectResult(result);
     }
     
 //9. Вывести люди, которые осуждены не за убийство
@@ -926,41 +968,41 @@ public class CrimeProject {
     //    fillDB(db);
 		 
     //1. Нати всех преступников по имени          
-        findCriminalByName(db,"Felix");
+        //findCriminalByName(db,"Felix");
             
     //2. Нати всех преступников
-        findAllCriminals(db);
+        //findAllCriminals(db);
 		
     //3. Все преступления, которые совершил определенный человек (имя, возраст)
         Criminal crim_test = new Criminal("Felix","Male","Russia",70);
-        findAllCrimesByCriminalNameAndAge(db,crim_test);
+        //findAllCrimesByCriminalNameAndAge(db,crim_test);
 		
     //4. Получить текст статьи УК по номеру (все пункты и части)
-        findArticle(db,"ст.105");
+        //findArticle(db,"ст.105");
             
     //5. Найти все районы, в которых совершались преступления по определенной статье (Группировка по статье)
-        findDistrictsByArticleGroupByName(db);
+        //findDistrictsByArticleGroupByName(db);
             
     //6. Вывести преступления, которое совершили определенные люди, определенного числа в определенном месте
         String[] criminals = {"Emma","Davis","Mark","Oleg"};
         String[] places = {"place78","place79","place89","place93","place119"};
         String[] dates = {"2016:01:12","2016:01:12"};
-        findCrimeByCriminalDatePlace(db,criminals,places,dates);
+        //findCrimeByCriminalDatePlace(db,criminals,places,dates);
             
     //7. Вывести всех преступников с группировкой во возрасту
         findAllCriminalsGroupByAge(db);
             
     //8. В каких районах совершил преступление определенный человек (имя и фамилия) с группировкой по имени
-        findAllDistrictForCriminalGroupByName(db,"Oleg");
+         //findAllDistrictForCriminalGroupByName(db,"Oleg");
 		 
     //8.1.В каких районах совершил преступление определенный человек (имя и фамилия) с группировкой по району
-        findAllDistrictForCriminalGroupByDistrict(db,"Oleg");
+        //findAllDistrictForCriminalGroupByDistrict(db,"Oleg");
             
     //9. Вывести людей, которые осуждены не за убийство
-        findCriminalsFemale(db);
+        //findCriminalsFemale(db);
             
     //10. Вывести преступниц от 18 до 30 лет
-        findCriminalNotKiller(db);
+        //findCriminalNotKiller(db);
 		   
         } finally {
             db.close();
